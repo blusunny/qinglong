@@ -67,7 +67,7 @@ let DD_BOT_SECRET = '';
 // =======================================企业微信机器人通知设置区域===========================================
 //此处填你企业微信机器人的 webhook(详见文档 https://work.weixin.qq.com/api/doc/90000/90136/91770)，例如：693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa
 //(环境变量名 QYWX_KEY)
-let QYWX_KEY = '2b00e2b5-7817-4dc7-87a8-aea5fb639bdf';
+let QYWX_KEY = '';
 
 // =======================================企业微信应用消息通知设置区域===========================================
 /*
@@ -103,11 +103,11 @@ let WP_TOPICIDS = "";
 let WP_UIDS = "";
 let WP_URL = "";
 
-let WP_APP_TOKEN_ONE = "AT_thU51MNdZeGANvqL4nl0f5Oi48UR7aMb";
+let WP_APP_TOKEN_ONE = "";
 if (process.env.WP_APP_TOKEN_ONE) {
     WP_APP_TOKEN_ONE = process.env.WP_APP_TOKEN_ONE;
 }
-let WP_UIDS_ONE = "UID_AYExEYi5EIBWXNX02z5kA8OqmRco";
+let WP_UIDS_ONE = "";
 
 // =======================================gotify通知设置区域==============================================
 //gotify_url 填写gotify地址,如https://push.example.de:8080
