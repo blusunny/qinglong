@@ -1,29 +1,27 @@
-/**
+/*
  作者：临渊
- 日期：6-15
- 网站：科技玩家
- 功能：签到、关注
- 变量：kjwj='账号&密码'  多个账号用换行分割 
+ 日期：6-21
+ 小程序：海底捞（活动入口：首页->每日签到）
+ 功能：签到（积分可以兑换菜品、火锅）
+ 抓包：superapp-public.kiwa-tech.com 此域名下的任意 _haidilao_app_token （TK有效期未知）
+ 示例：TOKEN_APP_xx-xx-xx-xx-xx
+ 变量格式：export hdlTk='xxx@xxx '  多个账号用@或者换行分割
  定时：一天一次
- cron：10 10 * * *
- 因为用Leaf大佬的会莫名其妙报错，所以就用Leaf大佬的源码改了一下，感谢Leaf大佬的源码（大佬的代码真优雅）
-
- 6-29 增加了关注，但可能会被风控取消
+ cron：20 10 * * *
  */
 
- const $ = new Env('科技玩家');
+ const $ = new Env('海底捞');
  const notify = $.isNode() ? require('./sendNotify') : '';
  const {log} = console;
  const Notify = 1; //0为关闭通知，1为打开通知,默认为1
  const debug = 0; //0为关闭调试，1为打开调试,默认为0
  //////////////////////
- let kjwj = process.env.kjwj;
- let kjwjArr = [];
+ let hdlTk = process.env.hdlTk;
+ let hdlTkArr = [];
  let data = '';
  let msg = '';
- let loginBack = 0;
- let token = '';
- let name = '';
+ let mobile = '';
+ let hdlBack = 0;
  
  
  !(async () => {
@@ -40,42 +38,37 @@
 
          await poem();
         
-         log(`\n=================== 共找到 ${kjwjArr.length} 个账号 ===================`)
+         log(`\n=================== 共找到 ${hdlTkArr.length} 个账号 ===================`)
  
          if (debug) {
-             log(`【debug】 这是你的全部账号数组:\n ${kjwjArr}`);
+             log(`【debug】 这是你的全部账号数组:\n ${hdlTkArr}`);
          }
  
  
-         for (let index = 0; index < kjwjArr.length; index++) {
- 
+         for (let index = 0; index < hdlTkArr.length; index++) {
  
              let num = index + 1
              log(`\n========= 开始【第 ${num} 个账号】=========\n`)
  
-             kjwj = kjwjArr[index].split('&');
+             hdlTk = hdlTkArr[index];
  
              if (debug) {
-                 log(`\n 【debug】 这是你第 ${num} 账号信息:\n ${data}\n`);
+                 log(`\n 【debug】 这是你第 ${num} 账号信息:\n ${hdltk}\n`);
              }
  
              msg += `\n第${num}个账号运行结果：`
-
-             log('【开始登录】');
-             await login();
+             log('开始获取信息');
+             await getInfo();
              await $.wait(2 * 1000);
 
-             if (loginBack != 1){
+             if (hdlBack) {
+                 log('开始签到');
+                 await doSignin();
+                 await $.wait(2 * 1000);
 
-                log('【开始查询签到状态】');
-                await getSign();
-                await $.wait(2 * 1000);  
-
-                 for (let i = 0; i < 5; i++) {
-                     log(`【开始第${i+1}次关注】`);
-                     await doFollow();
-                     await $.wait(randomInt(15000,25000));
-                 }
+                 log('开始查询积分余额');
+                 await getFragment();
+                 await $.wait(2 * 1000);
              }
 
          }
@@ -86,48 +79,45 @@
      .catch((e) => log(e))
      .finally(() => $.done())
 
- /**
-  * 登录  
-  */
-  function login(timeout = 3 * 1000) {
+/**
+ * 获取信息
+ */
+function getInfo(timeout = 3 * 1000) {
     return new Promise((resolve) => {
         let url = {
-            url: `https://www.kejiwanjia.com/wp-json/jwt-auth/v1/token`,    
-            headers: { 
-                "Host": "www.kejiwanjia.com",
-                "Connection": "keep-alive",
-                "Accept": "application/json, text/plain, */*",
-                "User-Agent": "Mozilla/5.0 (Linux; Android 10; MI 8 Build/QKQ1.190828.002;) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/83.0.4103.101 Mobile Safari/537.36",
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: `nickname=&username=${kjwj[0]}&password=${kjwj[1]}&code=&img_code=&invitation_code=&token=&smsToken=&luoToken=&confirmPassword=&loginType=`,
+            url: `https://superapp-public.kiwa-tech.com/activity/wxapp/applet/queryGrowthInfo`,
+            headers: {"Host":"superapp-public.kiwa-tech.com","content-type":"application/json","user-agent":"Mozilla/5.0 (Linux; Android 10; MI 8 Build/QKQ1.190828.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.99 XWEB/3235 MMWEBSDK/20220204 Mobile Safari/537.36 MMWEBID/6242 MicroMessenger/8.0.20.2080(0x28001435) Process/appbrand2 WeChat/arm64 Weixin NetType/WIFI Language/zh_CN ABI/arm64 miniProgram/wx1ddeb67115f30d1a","reqtype":"APPH5","_haidilao_app_token":`${hdlTk}`},
+            body: '{}',
         }
 
         if (debug) {
-            log(`\n【debug】=============== 这是 登录 请求 url ===============`);
+            log(`\n【debug】=============== 这是 获取信息 请求 url ===============`);
             log(JSON.stringify(url));
         }
 
         $.post(url, async (error, response, data) => {
             try {
                 if (debug) {
-                    log(`\n\n【debug】===============这是 登录 返回data==============`);
+                    log(`\n\n【debug】===============这是 获取信息 返回data==============`);
                     log(data)
                 }
 
                 let result = JSON.parse(data);
-                if (result.code == 1) {
+                if (result.success == true) {
 
-                    loginBack = 1;
-                    log(`【登录失败】${result.message} `)
-                    msg += `\n【登陆失败】${result.message}`
+                    mobile = result.data.mobile;
+                    hdlBack = 1;
 
-                } else {  
+                } else if (result.success == false) {
 
-                    log(`\n账号[${result.name}]登录成功，现有积分：${result.credit}`)
-                    token = result.token;
-                    name = result.name;
+                    log(`获取账号信息失败，请检查变量`)
+                    msg += `\n获取账号信息失败，请检查变量`
 
+                } else {
+
+                    log(`获取账号信息失败，原因是：${result.msg}`)
+                    msg += `\n获取账号信息失败，原因是：${result.msg}`
+                    
                 }
 
             } catch (e) {
@@ -137,54 +127,48 @@
             }
         }, timeout)
     })
- } 
+}
 
  /**
-  * 查询签到状态  
+  * 签到  
   */
- function getSign(timeout = 3 * 1000) {
+ function doSignin(timeout = 3 * 1000) {
      return new Promise((resolve) => {
          let url = {
-             url: `https://www.kejiwanjia.com/wp-json/b2/v1/getUserMission`,    
-             headers: { 
-                "Host": "www.kejiwanjia.com",
-                "Connection": "keep-alive",
-                "Accept": "application/json, text/plain, */*",
-                "User-Agent": "Mozilla/5.0 (Linux; Android 10; MI 8 Build/QKQ1.190828.002;) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/83.0.4103.101 Mobile Safari/537.36",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Authorization": `Bearer ${token}`,
-                "Cookie": `b2_token=${token};`
-             },
-             body: 'count=5&paged=1',
+             url: `https://superapp-public.kiwa-tech.com/activity/wxapp/signin/signin`,
+             headers: {"Host":"superapp-public.kiwa-tech.com","Content-Type":"application/json","user-agent":"Mozilla/5.0 (Linux; Android 10; MI 8 Build/QKQ1.190828.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.99 XWEB/3235 MMWEBSDK/20220204 Mobile Safari/537.36 MMWEBID/6242 MicroMessenger/8.0.20.2080(0x28001435) Process/appbrand2 WeChat/arm64 Weixin NetType/WIFI Language/zh_CN ABI/arm64 miniProgram/wx1ddeb67115f30d1a","reqtype":"APPH5","_haidilao_app_token":`${hdlTk}`},
+             body: '{"signinSource":"MiniApp"}',
          }
  
          if (debug) {
-             log(`\n【debug】=============== 这是 查询签到状态 请求 url ===============`);
+             log(`\n【debug】=============== 这是 签到 请求 url ===============`);
              log(JSON.stringify(url));
          }
  
          $.post(url, async (error, response, data) => {
              try {
                  if (debug) {
-                     log(`\n\n【debug】===============这是 查询签到状态 返回data==============`);
+                     log(`\n\n【debug】===============这是 签到 返回data==============`);
                      log(data)
                  }
  
                  let result = JSON.parse(data);
-                 if (result.code == 1) {
+                 let back = eval(result.data);
+                 if (result.success == true) {
  
-                     log(`查询签到状态失败`)
+                     log(`账号[${mobile}]签到成功，获得：${back.signinQueryDetailList[0].fragment}积分`)
+                     msg += `\n账号[${mobile}]签到成功，获得：${back.signinQueryDetailList[0].fragment}积分`
  
-                 } else {  
+                 } else if (result.success == false) {
 
-                    if(result.mission.credit == 0) {
-                        await $.wait(1000);
-                        await signin();
-                    } else {
-                        log(`账号[${name}]今天已签到，获得了${result.mission.credit}积分`)
-                        msg += `账号[${name}]今天已签到，获得了${result.mission.credit}积分`
-                    }
+                     log(`账号[${mobile}]签到失败,原因是：${result.msg}`)
+                     msg += `\n账号[${mobile}]签到失败,原因是：${result.msg}`
 
+                 } else {
+ 
+                     log(`账号[${mobile}]签到失败,原因是：${result.error}`)
+                     msg += `\n账号[${mobile}]签到失败,原因是：${result.error}`
+ 
                  }
  
              } catch (e) {
@@ -195,103 +179,40 @@
          }, timeout)
      })
  }
- 
- /**
-  * 签到  
-  */
-  function signin(timeout = 3 * 1000) {
+
+/**
+ * 查询积分余额
+ */
+function getFragment(timeout = 3 * 1000) {
     return new Promise((resolve) => {
         let url = {
-            url: `https://www.kejiwanjia.com/wp-json/b2/v1/userMission`,    
-            headers: { 
-                "Host": "www.kejiwanjia.com",
-                "Connection": "keep-alive",
-                "Accept": "application/json, text/plain, */*",
-                "User-Agent": "Mozilla/5.0 (Linux; Android 10; MI 8 Build/QKQ1.190828.002;) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/83.0.4103.101 Mobile Safari/537.36",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Authorization": `Bearer ${token}`,
-                "Cookie": `b2_token=${token};`
-            },
-            body: ``,
+            url: `https://superapp-public.kiwa-tech.com/activity/wxapp/signin/queryFragment`,
+            headers: {"Host":"superapp-public.kiwa-tech.com","content-type":"application/json","user-agent":"Mozilla/5.0 (Linux; Android 10; MI 8 Build/QKQ1.190828.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/86.0.4240.99 XWEB/3235 MMWEBSDK/20220204 Mobile Safari/537.36 MMWEBID/6242 MicroMessenger/8.0.20.2080(0x28001435) Process/appbrand2 WeChat/arm64 Weixin NetType/WIFI Language/zh_CN ABI/arm64 miniProgram/wx1ddeb67115f30d1a","reqtype":"APPH5","_haidilao_app_token":`${hdlTk}`},
+            body: '',
         }
 
         if (debug) {
-            log(`\n【debug】=============== 这是 签到 请求 url ===============`);
+            log(`\n【debug】=============== 这是 查询积分余额 请求 url ===============`);
             log(JSON.stringify(url));
         }
 
         $.post(url, async (error, response, data) => {
             try {
                 if (debug) {
-                    log(`\n\n【debug】===============这是 签到 返回data==============`);
+                    log(`\n\n【debug】===============这是 查询积分余额 返回data==============`);
                     log(data)
                 }
 
                 let result = JSON.parse(data);
-                if (result.code == 1) {
+                if (result.success == true) {
 
-                    log(`账号[${name}]签到失败：${result}`)
-                    msg += `账号[${name}]签到失败：${result}`
-
-                } else {  
-
-                    if(result.credit) {
-                        log(`账号[${name}]签到成功，获得${result.credit}积分，现有积分：${result.mission.my_credit}`)
-                        msg += `\n账号[${name}]签到成功，获得${result.credit}积分，现有积分：${result.mission.my_credit}`
-                    }
-
-                }
-
-            } catch (e) {
-                log(e)
-            } finally {
-                resolve();
-            }
-        }, timeout)
-    })
- }
-
-/**
- * 关注
- */
-function doFollow(timeout = 3 * 1000) {
-    return new Promise((resolve) => {
-        let user_id = randomInt(0,1000)
-        let url = {
-            url: `https://www.kejiwanjia.com/wp-json/b2/v1/AuthorFollow`,
-            headers: {
-                "Host": "www.kejiwanjia.com",
-                "Connection": "keep-alive",
-                "Accept": "application/json, text/plain, */*",
-                "User-Agent": "Mozilla/5.0 (Linux; Android 10; MI 8 Build/QKQ1.190828.002;) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/83.0.4103.101 Mobile Safari/537.36",
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Authorization": `Bearer ${token}`,
-                "Cookie": `b2_token=${token};`
-            },
-            body: `user_id=${user_id}`,
-        }
-
-        if (debug) {
-            log(`\n【debug】=============== 这是 关注 请求 url ===============`);
-            log(JSON.stringify(url));
-        }
-
-        $.post(url, async (error, response, data) => {
-            try {
-                if (debug) {
-                    log(`\n\n【debug】===============这是 关注 返回data==============`);
-                    log(data)
-                }
-
-                if (data == "true") {
-
-                    log(`账号[${name}]关注id[${user_id}]用户成功`)
-                    msg += `\n账号[${name}]关注id[${user_id}]用户成功`
+                    log(`账号[${mobile}]积分余额为：${result.data.total}，最近一次过期时间为：${result.data.expireDate}`)
+                    msg += `\n账号[${mobile}]积分余额为：${result.data.total}，最近一次过期时间为：${result.data.expireDate}`
 
                 } else {
 
-                    log(`账号[${name}]关注id[${user_id}]用户失败`)
-                    msg += `\n账号[${name}]关注id[${user_id}]用户失败`
+                    log(`账号[${mobile}]查询积分余额失败,原因是：${result.msg}`)
+                    msg += `\n账号[${mobile}]查询积分余额失败,原因是：${result.msg}`
 
                 }
 
@@ -303,18 +224,23 @@ function doFollow(timeout = 3 * 1000) {
         }, timeout)
     })
 }
-// ============================================变量检查============================================ \\
+
+ // ============================================变量检查============================================ \\
  async function Envs() {
-     if (kjwj) {
-         if (kjwj.indexOf("\n") != -1) {
-             kjwj.split("\n").forEach((item) => {
-                 kjwjArr.push(item);
+     if (hdlTk) {
+         if (hdlTk.indexOf("@") != -1) {
+             hdlTk.split("@").forEach((item) => {
+                 hdlTkArr.push(item);
+             });
+         } else if (hdlTk.indexOf("\n") != -1) {
+             hdlTk.split("\n").forEach((item) => {
+                 hdlTkArr.push(item);
              });
          } else {
-             kjwjArr.push(kjwj);
+             hdlTkArr.push(hdlTk);
          }
      } else {
-         log(`\n 【${$.name}】：未填写变量 kjwj`)
+         log(`\n 【${$.name}】：未填写变量 hdlTk`)
          return;
      }
  
