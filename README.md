@@ -22,4 +22,7 @@
 
 ❌其他没用成功
 
+值得买推荐：https://github.com/hex-ci/smzdm_script
+
+B站推荐：https://github.com/RayWangQvQ/BiliBiliToolPro
 
