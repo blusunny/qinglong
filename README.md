@@ -22,7 +22,11 @@
 
 ❌其他没用成功
 
-值得买推荐：https://github.com/hex-ci/smzdm_script
+👍推荐
 
-B站推荐：https://github.com/RayWangQvQ/BiliBiliToolPro
+值得买：https://github.com/hex-ci/smzdm_script
+
+B站：https://github.com/RayWangQvQ/BiliBiliToolPro
+
+夸克：https://github.com/Cp0204/quark-auto-save
 
