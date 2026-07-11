@@ -35,7 +35,7 @@ random_signin = os.getenv("RANDOM_SIGNIN", "true").lower() == "true"
 privacy_mode = os.getenv("PRIVACY_MODE", "true").lower() == "true"
 
 # ikuuu.nl 域名配置
-BASE_URL = 'https://ikuuu.nl'
+BASE_URL = 'https://ikuuu.win'
 LOGIN_URL = f'{BASE_URL}/auth/login'
 CHECK_URL = f'{BASE_URL}/user/checkin'
 
